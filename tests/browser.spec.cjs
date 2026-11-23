@@ -48,6 +48,7 @@ for(const width of [390,1440])test('layout, persistence and private offline map 
  await expect(page.locator('#status')).toContainText('Import saved');
  const manifest=await (await page.request.get(url+'manifest.webmanifest')).json();
  expect(new URL(manifest.start_url,url).href).toBe(url);
+ expect(new URL(manifest.id,new URL(url).origin).href).toBe(url);
  for(const icon of manifest.icons)expect((await page.request.get(new URL(icon.src,url).href)).ok()).toBe(true);
  await context.setOffline(true);await page.reload();
  await page.getByRole('link',{name:'Coverage map'}).click();

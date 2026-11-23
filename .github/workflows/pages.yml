@@ -72,4 +72,4 @@ jobs:
       - name: Check Chrome installability on the live site
         env:
           MESH_URL: https://ckeysvt88.github.io/meshtesting-/
-        run: npx playwright test tests/browser.spec.cjs --browser chromium --grep "installability checks"
+        run: xvfb-run -a npx playwright test tests/browser.spec.cjs --browser chromium --grep "installability checks"

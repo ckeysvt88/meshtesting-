@@ -1,0 +1,9 @@
+{
+  "name": "mesh-field-lab",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/domain.test.js",
+    "serve": "node tests/serve.js"
+  }
+}

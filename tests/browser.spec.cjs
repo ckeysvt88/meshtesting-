@@ -6,19 +6,29 @@ for(const width of [390,1440])test('layout, persistence and private offline map 
  await page.setViewportSize({width,height:850});
  await context.grantPermissions(['geolocation']);await context.setGeolocation({latitude:12.34,longitude:56.78});
  await page.goto(url);
- await expect(page.getByRole('heading',{name:'Field dashboard'})).toBeVisible();
+ await expect(page.getByRole('heading',{name:'Start with your radios'})).toBeVisible();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
- await page.getByRole('link',{name:'Open guide'}).click();
- await page.getByRole('button',{name:'Mark complete'}).click();
- await expect(page.getByRole('button',{name:'Mark incomplete'})).toBeVisible();
- await page.getByRole('link',{name:'Field tests'}).click();
+ await page.getByRole('link',{name:'Start radio setup'}).click();
+ await expect(page.getByRole('heading',{name:'Record the three radios'})).toBeVisible();
+ await expect(page.getByRole('link',{name:'Open radio inventory'})).toBeVisible();
+ await page.getByRole('button',{name:'Complete and continue'}).click();
+ await expect(page.getByRole('heading',{name:'Isolate CS01'})).toBeVisible();
+ await page.getByRole('link',{name:'Home',exact:true}).click();
+ await page.getByRole('link',{name:'Continue where I left off'}).click();
+ await expect(page.getByRole('heading',{name:'Isolate CS01'})).toBeVisible();
+ await page.getByRole('link',{name:'Field log'}).click();
  await page.getByLabel('Stop or test name').fill('Test fixture');
+ await expect(page.getByLabel('Session name')).toBeHidden();
+ await page.getByText('Session, signal and route details',{exact:true}).click();
  await page.getByLabel('Session name').fill('Survey A');
  await page.getByRole('button',{name:'Use GPS'}).click();
+ await expect(page.locator('#gps-result')).toContainText('Location saved');
+ await page.getByText('Enter or review coordinates',{exact:true}).click();
  await expect(page.getByLabel('Latitude')).toHaveValue('12.340000');
  await page.getByLabel('Unique packets or texts received').fill('0');
  await page.getByLabel('Known transmissions').fill('4');
  await page.getByLabel('I verified isolation').check();
+ await page.getByText('Use the optional observation timer',{exact:true}).click();
  await page.getByRole('button',{name:'Start timer'}).click();
  await expect(page.locator('#clock')).toContainText('remaining');
  await page.getByRole('button',{name:'Save observation'}).click();
@@ -27,12 +37,14 @@ for(const width of [390,1440])test('layout, persistence and private offline map 
  await expect(page.getByLabel('Session name')).toHaveValue('Survey A');
  await page.getByRole('link',{name:'Coverage map'}).click();
  await expect(page.getByRole('button',{name:/Test fixture/})).toBeVisible();
+ await page.getByText('More tools',{exact:true}).click();
  await page.getByRole('link',{name:'RF analytics'}).click();
  await expect(page.getByText('0.0%',{exact:true}).first()).toBeVisible();
  await page.getByLabel('Path distance').fill('1');
  await page.getByLabel('Actual frequency').fill('915');
  await page.getByRole('button',{name:'Calculate'}).click();
  await expect(page.locator('#rf-output')).toContainText('91.7 dB');
+ await page.getByText('More tools',{exact:true}).click();
  await page.getByRole('link',{name:'Data & help'}).click();
  await expect.poll(()=>page.evaluate(()=>Boolean(navigator.serviceWorker.controller))).toBeTruthy();
  const download=page.waitForEvent('download');await page.getByRole('button',{name:'Export JSON backup'}).click();
@@ -63,7 +75,7 @@ test('published app passes Chrome installability checks',async()=>{
  try{
   const page=context.pages()[0]||await context.newPage();
   await page.goto(url);
-  await expect(page.getByRole('heading',{name:'Field dashboard'})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'Start with your radios'})).toBeVisible();
   await expect.poll(()=>page.evaluate(()=>!!navigator.serviceWorker.controller)).toBeTruthy();
   const session=await context.newCDPSession(page);
   const {installabilityErrors}=await session.send('Page.getInstallabilityErrors');
@@ -73,7 +85,7 @@ test('published app passes Chrome installability checks',async()=>{
   const launched=context.waitForEvent('page');
   await session.send('PWA.launch',{manifestId:url});
   const app=await launched;
-  await expect(app.getByRole('heading',{name:'Field dashboard'})).toBeVisible();
+  await expect(app.getByRole('heading',{name:'Start with your radios'})).toBeVisible();
   await expect.poll(()=>app.evaluate(()=>matchMedia('(display-mode: standalone)').matches)).toBeTruthy();
   await session.send('PWA.uninstall',{manifestId:url});
  }finally{await context.close();}

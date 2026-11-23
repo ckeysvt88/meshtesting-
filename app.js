@@ -4,7 +4,7 @@ import {steps} from './guide.js';
 import {overlay,drawMap} from './map.js';
 const $=s=>document.querySelector(s);
 const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const nav={dashboard:'Dashboard',guide:'Guided setup',field:'Field tests',map:'Coverage map',analytics:'RF analytics',relay:'Relay planner',ready:'Readiness',devices:'Devices',data:'Data & help'};
+const nav={dashboard:'Home',guide:'Guide',field:'Field log',map:'Coverage map',analytics:'RF analytics',relay:'Relay planner',ready:'Readiness',devices:'Devices',data:'Data & help'};
 const category={range:'Range survey',public:'Public mesh',message:'Two-way message',relay:'Relay test'};
 let data=Object.fromEntries(kinds.map(k=>[k,[]])),editing=null,pending=null,installPrompt,step=0,timer,stopTime=0,mapFilter={};
 const page=()=>Object.hasOwn(nav,location.hash.slice(1))?location.hash.slice(1):'dashboard';
@@ -36,19 +36,40 @@ const counts=()=>({
 });
 const pct=n=>n==null?'—':(n*100).toFixed(1)+'%';
 const format=(n,unit='')=>Number.isFinite(n)?n.toFixed(1)+unit:'—';
+const phases=[
+ {title:'Get the radios ready',description:'Check the settings and confirm the radios can talk at home.',first:0,last:4},
+ {title:'Run your first range test',description:'Set up CS01 and X1 #1, then log a successful reception or a miss.',first:5,last:8},
+ {title:'Review your coverage',description:'See your saved stops and decide where to test next.'}
+];
+const firstUnfinished=()=>steps.findIndex(([id],i)=>i<9&&!complete(id));
+const resumeStep=()=>{const i=steps.findIndex(([id])=>!complete(id));return i<0?steps.length-1:i;};
+const phaseIndex=i=>phases.findIndex(p=>i>=p.first&&i<=p.last);
 function dashboard(){
- const c=counts(),next=steps.find(s=>!complete(s[0])),last=ordered()[0],done=steps.filter(s=>complete(s[0])).length;
- return intro('Field dashboard','Plan, measure and verify your Meshtastic network from the first local packet to repeatable family messaging.')+
- '<section class="panel hero"><h2>'+safe(next?next[1]:'Repeat the route under different conditions')+'</h2><p>'+done+' of '+steps.length+' guide steps checked · '+(c.passed?'Controlled two-way trials recorded':'Family route has no verified trial yet')+'</p><progress max="'+steps.length+'" value="'+done+'" aria-label="Guide progress"></progress><div class="actions"><a class="button primary" href="#guide">Open guide</a><a class="button" href="#field">Log a test</a></div></section>'+
- '<div class="grid">'+point('Surveyed locations',c.surveyed)+point('RF-isolated reception observations',c.heard)+point('Zero-reception stops',c.failed)+point('Successful controlled two-way trials',c.passed)+'</div>'+
- block('Workspace', '<p>'+data.profiles.length+' radio profiles · '+data.sites.filter(s=>s.type==='relay').length+' relay candidates</p><p>'+(last?'Latest test: '+safe(last.name)+(last.time?' · '+safe(new Date(last.time).toLocaleString()):''):'Your saved tests will appear here.')+'</p>')+
- block('Recent activity', '<ul>'+ordered().slice(0,5).map(r=>'<li>'+safe(r.name)+' · '+safe(category[r.type])+'</li>').join('')+'</ul><a href="#field">Open test history</a>');
+ const next=firstUnfinished(),done=steps.slice(0,9).filter(([id])=>complete(id)).length;
+ const last=ordered()[0],phase=next<0?2:phaseIndex(next);
+ const headline=done===0?'Start with your radios':next<0?'See what your test found':steps[next][1];
+ const lead=done===0?'Get CS01 and your X1s ready, then find out where the signal reaches. Start at home with the radios you already have.':next<0?'Open the map to review your saved stops. When you want to test whether a message can make it both ways, return to the guide.':phases[phase].description;
+ const action=done===0?'Start radio setup':next<0?'View coverage map':'Continue where I left off';
+ return '<section class="panel hero"><div class="eyebrow">Your first range test</div><h1>'+safe(headline)+'</h1><p>'+safe(lead)+'</p>'+
+ '<div class="actions"><a class="button primary" href="'+(next<0?'#map':'#guide')+'">'+action+' <span aria-hidden="true">→</span></a></div>'+
+ (done?'<div class="progress-label">'+done+' of 9 steps complete</div><progress max="9" value="'+done+'" aria-label="First range test progress"></progress>':'')+'</section>'+
+ '<section class="roadmap"><h2>How it works</h2><ol>'+phases.map((p,i)=>'<li '+(i===phase?'aria-current="step"':'')+'><span class="phase-number" aria-hidden="true">'+(i<phase?'✓':i+1)+'</span><div><h3>'+p.title+'</h3><p>'+p.description+'</p></div></li>').join('')+'</ol></section>'+
+ (last?block('Latest saved observation','<p><strong>'+safe(last.name)+'</strong> · '+safe(category[last.type])+'</p><a href="#field">Open field log</a>'):'');
 }
 function guide(){
  const [id,title,instruction,expect,trouble]=steps[step];
- return intro('Guided setup','Use the native Meshtastic app for radio settings. Mesh Field Lab saves your checklist and current step automatically on this device.')+
- '<div class="steps" aria-label="Guide steps">'+steps.map(([key,t],i)=>'<button type="button" class="'+(i===step?'primary':'')+'" data-step="'+i+'" aria-label="'+safe(t)+'" '+(i===step?'aria-current="step"':'')+'>'+(i+1)+(complete(key)?' ✓':'')+'</button>').join('')+'</div>'+
- block(title,'<p class="step-title">Manual · Step '+(step+1)+' of '+steps.length+'</p><p>'+safe(instruction)+'</p><h3>Expected result</h3><p>'+safe(expect)+'</p><details><summary>Troubleshooting</summary><p>'+safe(trouble)+'</p></details><div class="actions"><button data-step="'+(step-1)+'" '+(step===0?'disabled':'')+'>Back</button><button class="primary" data-complete="'+id+'">'+(complete(id)?'Mark incomplete':'Mark complete')+'</button><button data-step="'+(step+1)+'" '+(step===steps.length-1?'disabled':'')+'>Next</button></div>');
+ const phase=phaseIndex(step), current=phases[phase], done=complete(id);
+ const destination={inventory:['#devices','Open radio inventory'],survey:['#field','Open the field log'],messages:['#field','Open the field log'],public:['#field','Open the field log'],relay:['#relay','Open the relay planner']}[id];
+ const nextLabel=step===8?'Finish first test':step===steps.length-1?'Finish guide':'Complete and continue';
+ return '<div class="guide-heading"><a class="backlink" href="#dashboard">← Home</a><p class="eyebrow">'+(current?current.title:'Further testing')+'</p><h1>'+safe(title)+'</h1>'+
+ '<div class="progress-label">'+(current?'Step '+(step-current.first+1)+' of '+(current.last-current.first+1)+' in this phase':'Step '+(step-8)+' of '+(steps.length-9))+'</div>'+
+ (current?'<progress max="9" value="'+steps.slice(0,9).filter(([key])=>complete(key)).length+'" aria-label="First range test progress"></progress>':'')+'</div>'+
+ '<section class="panel guide-card"><h2>What to do</h2><p>'+safe(instruction)+'</p>'+
+ (destination?'<a class="button contextual" href="'+destination[0]+'">'+destination[1]+' <span aria-hidden="true">→</span></a>':'')+
+ '<div class="expect"><h3>How you’ll know it worked</h3><p>'+safe(expect)+'</p></div><details><summary>If you get stuck</summary><p>'+safe(trouble)+'</p></details></section>'+
+ '<div class="actions guide-actions">'+(step>0?'<button data-step="'+(step-1)+'">Back</button>':'')+
+ (done?'<button class="primary" data-advance>Continue <span aria-hidden="true">→</span></button><button class="quiet" data-complete="'+id+'">Mark as unfinished</button>':'<button class="primary" data-complete="'+id+'">'+nextLabel+' <span aria-hidden="true">→</span></button>')+'</div>'+
+ '<details class="all-steps"><summary>See all guide steps</summary><ol>'+steps.map(([key,t],i)=>'<li><button data-step="'+i+'" '+(i===step?'aria-current="step"':'')+'>'+safe(t)+(complete(key)?' <span>✓</span>':'')+'</button></li>').join('')+'</ol></details>';
 }
 function records(kind,rows){
  return rows.length?'<div class="list">'+rows.map(r=>'<details class="record"><summary>'+safe(r.name)+(kind==='logs'?' · '+safe(category[r.type])+(r.received===null?'':' · '+r.received+' received'):'')+'</summary>'+
@@ -58,22 +79,30 @@ function records(kind,rows){
 }
 function field(){
  const form='<form data-form="logs"><div class="grid">'+input('name','Stop or test name','text','required maxlength="100"')+
- select('type','Test type',types.map(t=>[t,category[t]]))+input('session','Session name')+input('pair','Trial ID or message identifier')+
- input('time','Observation start (local time)','datetime-local')+gps+
+ select('type','Test type',types.map(t=>[t,category[t]]))+
+ number('received','Unique packets or texts received',0,100000,1)+number('sent','Known transmissions',1,100000,1)+'</div>'+
+ '<p class="hint">Enter 0 if none arrived. Leave transmissions blank if you do not know how many were sent.</p>'+
+ '<div class="tool-row"><div class="actions"><button type="button" data-gps>Use GPS</button><output id="gps-result" aria-live="polite">Location optional</output></div>'+
+ '<details data-location><summary>Enter or review coordinates</summary><div class="grid">'+gps+'</div></details>'+
+ '<details data-timer><summary>Use the optional observation timer</summary><div class="actions timer-tools"><label>Observation timer (minutes)<input id="minutes" type="number" min="1" max="60" value="3"></label><button type="button" id="start">Start timer</button><button type="button" id="stop">Stop timer</button><output id="clock"></output></div></details></div>'+
+ check('rf','I verified isolation on participating radios and phones for this observation')+
+ '<details><summary>Session, signal and route details</summary><div class="grid">'+input('session','Session name')+input('pair','Trial ID or message identifier')+
+ input('time','Observation start (local time)','datetime-local')+
  select('anchor','First endpoint (such as CS01)',ids(data.sites))+select('site','Second endpoint',ids(data.sites))+
  select('direction','Direction',[['forward','First → second'],['reverse','Second → first']])+select('path','Observed path',[['unknown','Unknown'],['direct','Direct'],['relayed','Relayed']])+
- number('sent','Known transmissions',1,100000,1)+number('received','Unique packets or texts received',0,100000,1)+
  number('rssi','RSSI (dBm)',-200,0)+number('snr','SNR (dB)',-60,60)+number('hops','Hops',0,15,1)+
  select('vehicle','Vehicle placement',[['','Unknown'],['Inside','Inside'],['Outside','Outside']])+input('height','Antenna height (include unit)')+input('orientation','Antenna orientation')+'</div>'+
- '<div class="actions"><button type="button" data-gps>Use GPS</button><label>Observation timer (minutes)<input id="minutes" type="number" min="1" max="60" value="3"></label><button type="button" id="start">Start timer</button><button type="button" id="stop">Stop timer</button><output id="clock"></output></div>'+
- check('rf','I verified isolation on participating radios and phones for this observation')+check('control','I controlled every relay on the tested path, or confirmed the path was direct')+
- '<details><summary>Message delivery, public nodes and conditions</summary><div class="grid">'+input('sender','Sending radio')+input('recipient','Receiving radio')+
+ check('control','I controlled every relay on the tested path, or confirmed the path was direct')+'</details>'+
+  '<details><summary>Message delivery and public nodes</summary><div class="grid">'+input('sender','Sending radio')+input('recipient','Receiving radio')+
  select('ack','Recipient radio acknowledgment',[['','Unknown'],['yes','Yes'],['no','No']])+select('human','Human read the actual received text',[['','Unknown'],['yes','Yes'],['no','No']])+
  select('reply','Human reply received',[['','Unknown'],['yes','Yes'],['no','No']])+input('route','Relay dependency or path description')+
  input('node','Public node ID')+input('trace','Traceroute result')+number('battery','Battery (%)',0,100)+number('delay','Delivery delay (seconds)',0,86400)+input('weather','Weather')+'</div></details>'+
- notes+evidence+'<div class="actions"><button class="primary">Save observation</button>'+(editing?'<button type="button" data-cancel>Cancel edit</button>':'')+'</div></form>';
- return intro('Field tests','Manually log fresh receptions and misses. The PWA records GPS and the timer on request. The radio handles all packet transmission and reception.')+
- block(editing?'Edit observation':'New observation',form)+block('Test history',records('logs',ordered()));
+
+ '<details><summary>Notes and screenshot</summary>'+notes+evidence+'</details>'+
+ '<div class="actions"><button class="primary">Save observation</button>'+(editing?'<button type="button" data-cancel>Cancel edit</button>':'')+'</div></form>';
+ return intro('Field log','At each parked stop, count fresh packets in Meshtastic and enter the result here.')+
+ (firstUnfinished()>=0?'<p class="hint"><a href="#guide">Return to the guided test</a></p>':'')+
+ block(editing?'Edit observation':'Log a stop',form)+block('Saved observations',records('logs',ordered()));
 }
 const profileFields={device:'Hardware model',firmware:'Firmware version',role:'Device role',region:'LoRa region',preset:'Modem preset',slot:'Frequency slot',frequency:'Frequency override',channel:'Channel label (omit keys)',mqtt:'MQTT enabled / off',proxy:'MQTT Client Proxy',bridge:'Channel uplink/downlink',position:'GPS and positioning',range:'Range Test settings',antenna:'Antenna and feed line',height:'Antenna height'};
 function devices(){
@@ -99,6 +128,7 @@ function relay(){
 }
 function mapped(){
  return intro('Coverage map','Explore the local coordinate map. Pan and zoom, then select two markers to measure straight-line distance. The map works offline and sends no map-view requests.')+
+ (!data.logs.some(r=>r.lat!==null)?block('Add your first stop','<p>Capture a location in the field log to see your first point here.</p><a href="#field">Open field log</a>'):'')+
  block('Field observations','<form id="map-filter"><div class="grid">'+select('type','Test type',[['','All tests'],...types.map(k=>[k,category[k]])])+input('session','Session contains')+
  input('from','From date','date')+input('to','Through date','date')+select('path','Observed path',[['','All paths'],['direct','Direct'],['relayed','Relayed'],['unknown','Unknown']])+
  number('rssi','Minimum RSSI (dBm)',-200,0)+number('snr','Minimum SNR (dB)',-60,60)+select('size','Marker size',[['','Fixed'],['rssi','RSSI'],['snr','SNR']])+'</div><button>Apply filters</button></form>'+
@@ -185,12 +215,15 @@ function fill(form,record){
 }
 function render(){
  const current=page();
- $('#nav').innerHTML=Object.entries(nav).map(([k,n])=>'<a href="#'+k+'" '+(k===current?'aria-current="page"':'')+'>'+n+'</a>').join('');
+ const links=keys=>keys.map(k=>'<a href="#'+k+'" '+(k===current?'aria-current="page"':'')+'>'+nav[k]+'</a>').join('');
+ const primary=['dashboard','guide','field','map'];
+ $('#nav').innerHTML='<div class="main-nav">'+links(primary)+'</div><details class="more-nav"><summary>More tools</summary><div>'+links(Object.keys(nav).filter(k=>!primary.includes(k)))+'</div></details>';
  $('#view').innerHTML=views[current]();
  const form=$('[data-form]');
- if(form&&editing){fill(form,data[editing.kind].find(r=>r.id===editing.id));if(editing.kind==='logs')form.querySelector('details').open=true;}
+ if(form&&editing){fill(form,data[editing.kind].find(r=>r.id===editing.id));if(editing.kind==='logs')form.querySelectorAll('details').forEach(d=>{d.open=!d.matches('[data-timer]');});}
  if(current==='field'){
   if(!editing){form.elements.time.value=localTime();form.elements.session.value=data.drafts.find(r=>r.id==='session')?.value||'';}
+  form.querySelector('[name=type]').addEventListener('change',event=>{if(['message','relay'].includes(event.target.value)){form.querySelectorAll('details').forEach(d=>{if(!d.matches('[data-timer], [data-location]'))d.open=true;});}});
   updateTimer();
  }
  if(current==='map'){fill($('#map-filter'),mapFilter);mountMap();}
@@ -231,7 +264,7 @@ async function save(form){
   stopTime=0;clearInterval(timer);
  }
  await persist(items);
- editing=null;render();status('Saved locally.');
+ editing=null;render();status(kind==='logs'?'Observation saved. You can log another stop or open the coverage map.':'Saved locally.');
 }
 function dedupe(rows){
  const key=r=>csv([{...r,id:null}]);
@@ -276,6 +309,7 @@ function geolocate(button){
  navigator.geolocation.getCurrentPosition(p=>{
   button.disabled=false;if(!form.isConnected)return;
   form.elements.lat.value=p.coords.latitude.toFixed(6);form.elements.lon.value=p.coords.longitude.toFixed(6);
+  if(form.querySelector('#gps-result'))form.querySelector('#gps-result').textContent='Location saved to this form';
   status('Coordinates captured locally · estimated accuracy '+Math.round(p.coords.accuracy)+' m.');
  },()=>{button.disabled=false;if(form.isConnected)status('GPS did not return a fix. Check permissions or enter coordinates manually.');},{enableHighAccuracy:true,timeout:15000});
 }
@@ -285,7 +319,19 @@ $('#view').addEventListener('click',async e=>{
  try{
   if(d.gps!==undefined)geolocate(b);
   if(d.step!==undefined){step=Number(d.step);await persist({drafts:[{id:'step',value:String(step)}]});render();$('[aria-current="step"]')?.focus();}
-  if(d.complete){await persist({checks:[{id:d.complete,done:!complete(d.complete)}]});render();$('[data-complete]')?.focus();}
+  if(d.complete||d.advance!==undefined){
+   b.disabled=true;
+   try{
+    if(d.complete&&complete(d.complete)){
+     await persist({checks:[{id:d.complete,done:false}]});render();$('[data-complete]')?.focus();
+    }else{
+     const next=Math.min(step+1,steps.length-1);
+     await persist({...(d.complete?{checks:[{id:d.complete,done:true}]}:{}),drafts:[{id:'step',value:String(next)}]});
+     if(step===8||step===steps.length-1)location.hash='#dashboard';
+     else{step=next;render();$('#content').focus();}
+    }
+   }finally{b.disabled=false;}
+  }
   if(d.edit){editing={kind:d.edit,id:d.id};render();$('[name="name"]')?.focus();}
   if(d.cancel!==undefined){editing=null;render();}
   if(d.delete&&confirm('Delete this record?')){await persist({},{del:[d.delete,d.id]});editing=null;render();status('Record deleted.');}
@@ -331,10 +377,10 @@ $('#view').addEventListener('change',async e=>{
 });
 addEventListener('hashchange',()=>{
  if(location.hash==='#content')return;
- editing=null;pending=null;status('');render();$('#content').focus();
+ editing=null;pending=null;if(page()==='guide')step=resumeStep();status('');render();$('#content').focus();
 });
 try{
  data=await read();
- step=Math.min(steps.length-1,Math.max(0,Number(data.drafts.find(x=>x.id==='step')?.value)||0));
+ step=resumeStep();
  render();
 }catch(error){status('Local storage unavailable: '+error.message);}

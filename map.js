@@ -29,16 +29,17 @@ export function overlay(name,source){
   }else throw Error('Choose a GeoJSON, KML or GPX file.');
  }
  if(!paths.length||paths.reduce((n,p)=>n+(p?.length||0),0)>15000||paths.some(p=>!Array.isArray(p)||!p.length||!p.every(finitePoint)))throw Error('Overlay needs valid coordinates and at most 15,000 points.');
- return {id:crypto.randomUUID(),name:name.slice(0,100),paths};
+ return {id:crypto.randomUUID(),name:name.slice(0,100),paths:paths.map(p=>p.map(c=>c.slice(0,2)))};
 }
 export function drawMap(host,points,overlays,describe){
  const svg=host.querySelector('svg'),detail=host.querySelector('output');
  const coords=[...points,...overlays.flatMap(o=>o.paths.flatMap(p=>p.map(([lon,lat])=>({lon,lat}))))];
  if(!coords.length){detail.textContent='Save coordinates or load an overlay to plot points.';return;}
- const latitudes=coords.map(p=>p.lat),longitudes=coords.map(p=>p.lon);
- const midLat=(Math.min(...latitudes)+Math.max(...latitudes))/2,midLon=(Math.min(...longitudes)+Math.max(...longitudes))/2;
+ let minLat=90,maxLat=-90,minLon=180,maxLon=-180;
+ for(const p of coords){minLat=Math.min(minLat,p.lat);maxLat=Math.max(maxLat,p.lat);minLon=Math.min(minLon,p.lon);maxLon=Math.max(maxLon,p.lon);}
+ const midLat=(minLat+maxLat)/2,midLon=(minLon+maxLon)/2;
  const aspect=Math.max(.05,Math.cos(midLat*Math.PI/180));
- const fit=Math.max(.001,(Math.max(...latitudes)-Math.min(...latitudes))/270,(Math.max(...longitudes)-Math.min(...longitudes))*aspect/570)/1.7;
+ const fit=Math.max(.001,(maxLat-minLat)/270,(maxLon-minLon)*aspect/570)/1.7;
  let selected=null,zoom=1,x=0,y=0,drag;
  const make=(tag,attrs)=>{const e=document.createElementNS('http://www.w3.org/2000/svg',tag);for(const [k,v] of Object.entries(attrs))e.setAttribute(k,v);return e};
  function paint(){

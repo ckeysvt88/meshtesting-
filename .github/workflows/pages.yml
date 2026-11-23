@@ -7,17 +7,17 @@ permissions:
   contents: read
 jobs:
   verify:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - run: npm test
-      - run: npm install --no-save --package-lock=false @playwright/test@1.51.1
-      - run: npx playwright install --with-deps chromium
+      - run: npm install --no-save --package-lock=false @playwright/test@1.58.2
       - run: |
           node tests/serve.js &
+          for i in {1..20}; do curl -fsS http://127.0.0.1:4321/meshtesting-/ -o /dev/null && break; sleep 1; done
           npx playwright test tests/browser.spec.cjs --browser chromium
       - if: github.ref == 'refs/heads/main'
         run: |
@@ -30,7 +30,7 @@ jobs:
   deploy:
     if: github.ref == 'refs/heads/main'
     needs: verify
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       pages: write
       id-token: write
@@ -44,3 +44,19 @@ jobs:
       - name: Publish Pages
         id: publish
         uses: actions/deploy-pages@v4
+  live:
+    if: github.ref == 'refs/heads/main'
+    needs: deploy
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --package-lock=false @playwright/test@1.58.2
+      - name: Verify published assets and offline behavior
+        env:
+          MESH_URL: https://ckeysvt88.github.io/meshtesting-/
+        run: |
+          curl -fsS --retry 8 --retry-all-errors "$MESH_URL" | grep -q "Mesh Field Lab"
+          npx playwright test tests/browser.spec.cjs --browser chromium

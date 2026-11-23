@@ -1,4 +1,5 @@
 const {test,expect}=require('@playwright/test');
+test.use({channel:'chrome'});
 const url=process.env.MESH_URL||'http://127.0.0.1:4321/meshtesting-/';
 for(const width of [390,1440])test('layout, persistence and private offline map at '+width,async({page,context})=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));

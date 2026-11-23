@@ -17,6 +17,15 @@ for(const width of [390,1440])test('layout, persistence and private offline map 
  await page.getByRole('link',{name:'Continue where I left off'}).click();
  await expect(page.getByRole('heading',{name:'Turn off internet forwarding on CK88'})).toBeVisible();
  await page.getByRole('link',{name:'Field log'}).click();
+ if(width===390){
+  const tabs=page.getByRole('navigation',{name:'Workspace'});
+  await page.getByRole('button',{name:'Save observation'}).scrollIntoViewIfNeeded();
+  await expect.poll(()=>page.evaluate(()=>window.scrollY)).toBeGreaterThan(0);
+  await expect(tabs.getByRole('link',{name:'Coverage map'})).toBeInViewport({ratio:1});
+  await tabs.getByRole('link',{name:'Coverage map'}).click();
+  await expect(page.getByRole('heading',{name:'Coverage map'})).toBeVisible();
+  await tabs.getByRole('link',{name:'Field log'}).click();
+ }
  await page.getByLabel('Stop or test name').fill('Test fixture');
  await expect(page.getByLabel('Session name')).toBeHidden();
  await page.getByText('Session, signal and route details',{exact:true}).click();

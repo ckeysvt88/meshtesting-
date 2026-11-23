@@ -55,3 +55,12 @@ for(const width of [390,1440])test('layout, persistence and private offline map 
  await expect(page.getByRole('button',{name:/Test sender/})).toBeVisible();
  expect(errors).toEqual([]);
 });
+test('published app passes Chrome installability checks',async({page,context})=>{
+ test.skip(!process.env.MESH_URL,'Check installability on the published HTTPS origin.');
+ await page.goto(url);
+ await expect(page.getByRole('heading',{name:'Field dashboard'})).toBeVisible();
+ await expect.poll(()=>page.evaluate(()=>!!navigator.serviceWorker.controller)).toBeTruthy();
+ const session=await context.newCDPSession(page);
+ const {installabilityErrors}=await session.send('Page.getInstallabilityErrors');
+ expect(installabilityErrors).toEqual([]);
+});

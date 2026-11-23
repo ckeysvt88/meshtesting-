@@ -60,3 +60,16 @@ jobs:
         run: |
           curl -fsS --retry 8 --retry-all-errors "$MESH_URL" | grep -q "Mesh Field Lab"
           npx playwright test tests/browser.spec.cjs --browser chromium
+  installability:
+    if: github.ref == 'refs/heads/mesh-field-lab'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --package-lock=false @playwright/test@1.58.2
+      - name: Check Chrome installability on the live site
+        env:
+          MESH_URL: https://ckeysvt88.github.io/meshtesting-/
+        run: npx playwright test tests/browser.spec.cjs --browser chromium --grep "installability checks"

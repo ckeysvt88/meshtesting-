@@ -89,10 +89,12 @@ function relay(){
  select('type','Site type',[['anchor','Anchor'],['destination','Destination'],['relay','Candidate relay']])+gps+
  Object.entries({height:'Antenna height',gain:'Antenna gain (dBi)',cable:'Cable loss (dB)',margin:'Predicted link margin (dB)',model:'Prediction tool and assumptions',extension:'Expected onward extension',access:'Permission and access status',power:'Solar exposure or power plan',mount:'Mounting feasibility',obstruction:'Obstructions and terrain'}).map(([k,n])=>input(k,n)).join('')+
  '</div><div class="actions"><button type="button" data-gps>Use GPS</button></div>'+notes+evidence+'<div class="actions"><button class="primary">Save site</button>'+(editing?'<button type="button" data-cancel>Cancel edit</button>':'')+'</div></form>')+
- block('Candidate comparison','<p>Measured leg counts use both directions with human confirmation and controlled paths. Record access, sun and mount before selecting a pilot.</p><div class="table"><table><thead><tr><th>Candidate</th><th>Controlled legs</th><th>Predicted margin</th><th>Access / power / mount</th></tr></thead><tbody>'+data.sites.filter(s=>s.type==='relay').map(s=>{
+ block('Candidate comparison','<p>Measured leg counts use both directions with human confirmation and controlled paths. Record access, sun and mount before selecting a pilot.</p><div class="table"><table><thead><tr><th>Candidate</th><th>Controlled legs</th><th>Predicted margin</th><th>Access / power / mount</th><th>Next test</th></tr></thead><tbody>'+data.sites.filter(s=>s.type==='relay').map(s=>{
   const legs=trials(data.logs).filter(t=>t.pass&&t.rows.every(r=>r.control&&r.type==='relay')&&[t.rows[0].anchor,t.rows[0].site].includes(s.id));
   const peers=[...new Set(legs.map(t=>{const r=t.rows[0];return r.anchor===s.id?r.site:r.anchor}))];
-  return '<tr><td>'+safe(s.name)+'</td><td>'+safe(peers.map(id=>getSite(id)?.name||'Deleted site').join(', ')||'Untested')+'</td><td>'+safe(s.margin||'—')+'</td><td>'+safe([s.access,s.power,s.mount].filter(Boolean).join(' / ')||'Unrecorded')+'</td></tr>';
+  const home=peers.some(id=>getSite(id)?.type==='anchor'),onward=peers.some(id=>getSite(id)?.type==='destination');
+  const next=home&&onward?(s.access&&s.power&&s.mount?'Run a controlled end-to-end trial':'Verify access, power and mounting'):home?'Test the onward leg':'Test the link back to the anchor';
+  return '<tr><td>'+safe(s.name)+'</td><td>'+safe(peers.map(id=>getSite(id)?.name||'Deleted site').join(', ')||'Untested')+'</td><td>'+safe(s.margin||'—')+'</td><td>'+safe([s.access,s.power,s.mount].filter(Boolean).join(' / ')||'Unrecorded')+'</td><td>'+safe(next)+'</td></tr>';
  }).join('')+'</tbody></table></div>')+block('Saved sites',records('sites',data.sites));
 }
 function mapped(){
@@ -153,7 +155,7 @@ function readiness(){
   const passed=records.filter(t=>t.pass&&t.rows.every(r=>r.control)),days=[...new Set(passed.filter(t=>t.rows.every(r=>r.time)).map(t=>t.rows.map(r=>r.time).sort().at(-1).slice(0,10)))].sort();
   const age=days.length?(Date.now()-Date.parse(days.at(-1)))/86400000:Infinity;
   const recent=records.filter(t=>t.rows.some(r=>r.time)).sort((a,b)=>b.rows.map(r=>r.time).sort().at(-1).localeCompare(a.rows.map(r=>r.time).sort().at(-1)))[0];
-  const regressed=recent&&!recent.pass;
+  const regressed=recent&&(!recent.pass||!recent.rows.every(r=>r.control));
   const relayed=records.some(t=>t.rows.some(r=>r.path==='relayed')),unknown=records.some(t=>t.rows.some(r=>!r.control||r.path==='unknown'));
   return '<p><strong>'+safe(site.name)+'</strong> · '+(regressed?'Latest trial failed or incomplete · retest due':days.length>=2?(age>30?'Retest due':'Repeat controlled evidence on file'):(days.length?'One controlled test date':'Awaiting controlled end-to-end test'))+' · '+passed.length+' controlled passes / '+records.length+' recorded RF-isolated trials'+(relayed?' · Relay observed':'')+(unknown?' · Path or internet dependency unresolved for some trials':'')+'</p>';
  }).join('')||'<p>Save an anchor and a family destination in Relay Planner to track route evidence.</p>')+

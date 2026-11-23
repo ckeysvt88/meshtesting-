@@ -38,3 +38,11 @@ test('backup validates and restores',()=>{
  assert.throws(()=>backup({...blank,logs:[{name:'a',id:'x'},{name:'b',id:'x'}]}),/duplicate/);
  assert.throws(()=>backup({...blank,schema:2}),/version/);
 });
+test('real firmware split-RSSI and Apple position schemas',()=>{
+ const header='time,from,sender name,sender lat,sender long,rx lat,rx long,rx elevation,rx snr,distance,hop limit,payload,rx rssi';
+ const packet='12:34:56,!01,CS01,35,-78,35.1,-78.1,0,-6,200,2,"seq 1"';
+ const rows=parseCSV(header+'\n'+packet+'\n-108,'+packet.replace('seq 1','seq 2')+'\n-112,');
+ assert.deepEqual(rows.map(r=>[r.rssi,r.snr,r.time,r.name]),[[-108,-6,'','CS01'],[-112,-6,'','CS01']]);
+ const pos=parseCSV('SeqNo, Latitude, Longitude, Altitude, Sats, Speed, Heading, SNR, Timestamp\n1, 12.345, 67.89, 10, 5, 0, 0, -5, 11/22/26 7:34 PM')[0];
+ assert.equal(pos.received,null);assert.equal(pos.lat,12.345);assert.match(pos.notes,/11\/22\/26/);
+});

@@ -75,6 +75,12 @@ export function readCSV(source){
  const heads=rows.shift()?.map(x=>x.trim().toLowerCase().replace(/[ _-]/g,''))||[];
  if(new Set(heads).size!==heads.length)throw Error('Duplicate CSV columns.');
  if(!heads.length)throw Error('CSV needs a header row.');
+ const firmware=heads.join(',')==='time,from,sendername,senderlat,senderlong,rxlat,rxlong,rxelevation,rxsnr,distance,hoplimit,payload,rxrssi';
+ // Some firmware releases write the RSSI on the following line before the next packet.
+ if(firmware&&rows[0]?.length===heads.length-1&&rows.at(-1)?.length===2&&rows.at(-1)[1]===''&&rows.slice(1).every(r=>/^-?\d+$/.test(r[0]))){
+  for(let i=0;i<rows.length-1;i++)rows[i]=(i?rows[i].slice(1):rows[i]).concat(rows[i+1][0]);
+  rows.pop();
+ }
  return {heads,rows:rows.map((cells,index)=>{
   if(cells.length!==heads.length)throw Error('Wrong column count in row '+(index+2));
   return Object.fromEntries(heads.map((k,i)=>[k,cells[i]]));
@@ -85,18 +91,18 @@ export function parseCSV(source,mode='auto',mapping={}){
  const own=mode==='lab'||mode==='auto'&&heads.includes('sent')&&heads.includes('received')&&heads.includes('session');
  return rows.map((r,index)=>{
   if(own){
-   for(const k of ['name','session','pair','notes','id','anchor','site'])if(/^'[\s]*[=+@-]|^'[\t\r\n]/.test(r[k]||''))r[k]=r[k].slice(1);
+   for(const k of columns.filter(k=>!['sent','received','rssi','snr','hops','battery','delay','lat','lon'].includes(k)))if(/^'[\s]*[=+@-]|^'[\t\r\n]/.test(r[k]||''))r[k]=r[k].slice(1);
    return clean('logs',r);
   }
   const get=(k,...aliases)=>mapping[k]?r[mapping[k]]:aliases.map(h=>r[h]).find(Boolean);
-  const position=mode==='position';
+  const position=mode==='position'||mode==='auto'&&['seqno','latitude','longitude'].every(h=>heads.includes(h));
   if(!position&&!mapping.name&&!heads.some(h=>['name','sender','from','payload'].includes(h)))throw Error('Map the packet sender/name column or choose Position Log mode.');
   const lat=get('lat','rxlat','receiverlatitude',...(position?['latitude','lat']:[])),lon=get('lon','rxlon','rxlong','receiverlongitude',...(position?['longitude','lon','long']:[]));
   if(position&&(!lat||!lon))throw Error('Position Log requires mapped latitude and longitude.');
-  const timestamp=get('time','timestamp','time','date');
-  return clean('logs',{name:get('name','sender','from','name')||(position?'Imported position ':'Imported packet ')+(index+1),type:'range',session:position?'Position Log import':'Packet CSV import',
+  const timestamp=get('time','timestamp','time','date')?.trim();
+  return clean('logs',{name:get('name','sendername','sender','from','name')||(position?'Imported position ':'Imported packet ')+(index+1),type:'range',session:position?'Position Log import':'Packet CSV import',
    time:timestamp&&/(Z|[+-]\d\d:\d\d)$/i.test(timestamp)&&Number.isFinite(Date.parse(timestamp))?timestamp:undefined,
-   lat,lon,received:position?null:1,rssi:position?null:get('rssi','rssi'),snr:position?null:get('snr','snr'),notes:[get('notes','payload','message','notes'),timestamp?'Source time: '+timestamp:'Source time unavailable'].filter(Boolean).join(' · ')});
+   lat,lon,received:position?null:1,rssi:position?null:get('rssi','rxrssi','rssi'),snr:position?null:get('snr','rxsnr','snr'),notes:[get('notes','payload','message','notes'),timestamp?'Source time: '+timestamp:'Source time unavailable'].filter(Boolean).join(' · ')});
  });
 }
 export const kinds=['profiles','sites','logs','checks','overlays','drafts'];

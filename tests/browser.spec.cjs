@@ -9,13 +9,13 @@ for(const width of [390,1440])test('layout, persistence and private offline map 
  await expect(page.getByRole('heading',{name:'Start with your radios'})).toBeVisible();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
  await page.getByRole('link',{name:'Start radio setup'}).click();
- await expect(page.getByRole('heading',{name:'Record the three radios'})).toBeVisible();
- await expect(page.getByRole('link',{name:'Open radio inventory'})).toBeVisible();
- await page.getByRole('button',{name:'Complete and continue'}).click();
- await expect(page.getByRole('heading',{name:'Isolate CS01'})).toBeVisible();
+ await expect(page.getByRole('heading',{name:'Connect your iPhone to CK88'})).toBeVisible();
+ await expect(page.getByText('In the nearby radios list, tap CK88.',{exact:false})).toBeVisible();
+ await page.getByRole('button',{name:'CK88 is connected'}).click();
+ await expect(page.getByRole('heading',{name:'Turn off internet forwarding on CK88'})).toBeVisible();
  await page.getByRole('link',{name:'Home',exact:true}).click();
  await page.getByRole('link',{name:'Continue where I left off'}).click();
- await expect(page.getByRole('heading',{name:'Isolate CS01'})).toBeVisible();
+ await expect(page.getByRole('heading',{name:'Turn off internet forwarding on CK88'})).toBeVisible();
  await page.getByRole('link',{name:'Field log'}).click();
  await page.getByLabel('Stop or test name').fill('Test fixture');
  await expect(page.getByLabel('Session name')).toBeHidden();

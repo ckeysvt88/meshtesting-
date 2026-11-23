@@ -38,7 +38,7 @@ const pct=n=>n==null?'—':(n*100).toFixed(1)+'%';
 const format=(n,unit='')=>Number.isFinite(n)?n.toFixed(1)+unit:'—';
 const phases=[
  {title:'Get the radios ready',description:'Check the settings and confirm the radios can talk at home.',first:0,last:4},
- {title:'Run your first range test',description:'Set up CS01 and X1 #1, then log a successful reception or a miss.',first:5,last:8},
+ {title:'Run your first range test',description:'Set up CS01 and CK88, then log a successful reception or a miss.',first:5,last:8},
  {title:'Review your coverage',description:'See your saved stops and decide where to test next.'}
 ];
 const firstUnfinished=()=>steps.findIndex(([id],i)=>i<9&&!complete(id));
@@ -48,7 +48,7 @@ function dashboard(){
  const next=firstUnfinished(),done=steps.slice(0,9).filter(([id])=>complete(id)).length;
  const last=ordered()[0],phase=next<0?2:phaseIndex(next);
  const headline=done===0?'Start with your radios':next<0?'See what your test found':steps[next][1];
- const lead=done===0?'Get CS01 and your X1s ready, then find out where the signal reaches. Start at home with the radios you already have.':next<0?'Open the map to review your saved stops. When you want to test whether a message can make it both ways, return to the guide.':phases[phase].description;
+ const lead=done===0?'First, connect your iPhone to CK88 in the Meshtastic app. The guide walks you through that connection and the steps for your first range test.':next<0?'Open the map to review your saved stops. When you want to test whether a message can make it both ways, return to the guide.':phases[phase].description;
  const action=done===0?'Start radio setup':next<0?'View coverage map':'Continue where I left off';
  return '<section class="panel hero"><div class="eyebrow">Your first range test</div><h1>'+safe(headline)+'</h1><p>'+safe(lead)+'</p>'+
  '<div class="actions"><a class="button primary" href="'+(next<0?'#map':'#guide')+'">'+action+' <span aria-hidden="true">→</span></a></div>'+
@@ -59,12 +59,12 @@ function dashboard(){
 function guide(){
  const [id,title,instruction,expect,trouble]=steps[step];
  const phase=phaseIndex(step), current=phases[phase], done=complete(id);
- const destination={inventory:['#devices','Open radio inventory'],survey:['#field','Open the field log'],messages:['#field','Open the field log'],public:['#field','Open the field log'],relay:['#relay','Open the relay planner']}[id];
- const nextLabel=step===8?'Finish first test':step===steps.length-1?'Finish guide':'Complete and continue';
+ const destination={survey:['#field','Open the field log'],messages:['#field','Open the field log'],public:['#field','Open the field log'],relay:['#relay','Open the relay planner']}[id];
+ const nextLabel=id==='inventory'?'CK88 is connected':step===8?'Finish first test':step===steps.length-1?'Finish guide':'Complete and continue';
  return '<div class="guide-heading"><a class="backlink" href="#dashboard">← Home</a><p class="eyebrow">'+(current?current.title:'Further testing')+'</p><h1>'+safe(title)+'</h1>'+
  '<div class="progress-label">'+(current?'Step '+(step-current.first+1)+' of '+(current.last-current.first+1)+' in this phase':'Step '+(step-8)+' of '+(steps.length-9))+'</div>'+
  (current?'<progress max="9" value="'+steps.slice(0,9).filter(([key])=>complete(key)).length+'" aria-label="First range test progress"></progress>':'')+'</div>'+
- '<section class="panel guide-card"><h2>What to do</h2><p>'+safe(instruction)+'</p>'+
+ '<section class="panel guide-card"><h2>What to do</h2>'+(Array.isArray(instruction)?'<ol class="guide-instructions">'+instruction.map(item=>'<li>'+safe(item)+'</li>').join('')+'</ol>':'<p>'+safe(instruction)+'</p>')+
  (destination?'<a class="button contextual" href="'+destination[0]+'">'+destination[1]+' <span aria-hidden="true">→</span></a>':'')+
  '<div class="expect"><h3>How you’ll know it worked</h3><p>'+safe(expect)+'</p></div><details><summary>If you get stuck</summary><p>'+safe(trouble)+'</p></details></section>'+
  '<div class="actions guide-actions">'+(step>0?'<button data-step="'+(step-1)+'">Back</button>':'')+
@@ -107,7 +107,7 @@ function field(){
 const profileFields={device:'Hardware model',firmware:'Firmware version',role:'Device role',region:'LoRa region',preset:'Modem preset',slot:'Frequency slot',frequency:'Frequency override',channel:'Channel label (omit keys)',mqtt:'MQTT enabled / off',proxy:'MQTT Client Proxy',bridge:'Channel uplink/downlink',position:'GPS and positioning',range:'Range Test settings',antenna:'Antenna and feed line',height:'Antenna height'};
 function devices(){
  const mismatches=['region','preset','slot','frequency','channel'].filter(k=>new Set(data.profiles.map(r=>r[k].toLowerCase()).filter(Boolean)).size>1);
- return intro('Device inventory','Record actual settings for CS01 and the two X1s. Mesh Field Lab compares your entries and keeps radio changes in the Meshtastic app.')+
+ return intro('Device inventory','Record actual settings for CS01, CK88 and DK88. Mesh Field Lab compares your entries and keeps radio changes in the Meshtastic app.')+
  (mismatches.length?block('Verify these differences','<p class="danger">'+safe(mismatches.map(k=>profileFields[k]).join(', '))+'</p>'):'')+
  block(editing?'Edit radio profile':'Add radio profile','<form data-form="profiles"><div class="grid">'+input('name','Node name','text','required')+Object.entries(profileFields).map(([k,n])=>input(k,n)).join('')+'</div>'+notes+'<div class="actions"><button class="primary">Save radio</button>'+(editing?'<button type="button" data-cancel>Cancel edit</button>':'')+'</div></form>')+
  block('Saved radios',records('profiles',data.profiles));

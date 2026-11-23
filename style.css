@@ -63,3 +63,5 @@ form details .grid{margin-top:9px}
 }
 @media(max-width:370px){.main-nav a{font-size:.8rem}}
 .brand-mark{display:grid;place-items:center;width:36px;height:36px;border-radius:10px;background:#263f71;color:white;flex:none;font-weight:760}
+
+.guide-instructions{padding-left:1.55rem;margin:12px 0 20px;max-width:65ch}.guide-instructions li{padding-left:.25rem;margin-bottom:.8rem}.guide-instructions li::marker{font-weight:750;color:#263f71}

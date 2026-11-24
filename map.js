@@ -34,7 +34,14 @@ export function overlay(name,source){
 export function drawMap(host,points,overlays,describe){
  const svg=host.querySelector('svg'),detail=host.querySelector('output');
  const coords=[...points,...overlays.flatMap(o=>o.paths.flatMap(p=>p.map(([lon,lat])=>({lon,lat}))))];
- if(!coords.length){detail.textContent='Save coordinates or load an overlay to plot points.';return;}
+ if(!coords.length){
+  svg.replaceChildren();
+  svg.onpointerdown=svg.onpointermove=svg.onpointerup=svg.onpointercancel=null;
+  host.querySelectorAll('[data-map]').forEach(button=>{button.onclick=null;});
+  detail.textContent='No points match this view. Change the filters, save coordinates, or add a reference overlay.';
+  return;
+ }
+ detail.textContent='Select a marker to inspect it.';
  let minLat=90,maxLat=-90,minLon=180,maxLon=-180;
  for(const p of coords){minLat=Math.min(minLat,p.lat);maxLat=Math.max(maxLat,p.lat);minLon=Math.min(minLon,p.lon);maxLon=Math.max(maxLon,p.lon);}
  const midLat=(minLat+maxLat)/2,midLon=(minLon+maxLon)/2;

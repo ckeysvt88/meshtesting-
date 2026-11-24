@@ -1,4 +1,4 @@
-const name='mesh-field-lab-shell-v8';
+const name='mesh-field-lab-shell-v9';
 const scope=new URL(self.registration.scope);
 const shell=['./','./index.html','./style.css','./app.js','./db.js','./domain.js','./guide.js','./map.js','./readiness-model.js','./readiness-guide.js','./readiness-ui.js','./kits/SenseCAP-X1-Offline-Kit-STARTER.zip','./kits/SenseCAP-P1-Pro-Offline-Kit-STARTER.zip','./manifest.webmanifest','./icon.svg','./icon-192.png','./icon-512.png'];
 const assets=new Set(shell.map(path=>new URL(path,scope).href));

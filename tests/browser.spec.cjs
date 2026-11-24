@@ -147,3 +147,28 @@ test('readiness resumes an independent task and verifies an offline firmware att
  await expect(tabs.getByRole('link',{name:'Readiness',exact:true})).toBeInViewport({ratio:1});
  expect(errors).toEqual([]);
 });
+
+test('an empty protocol layer clears markers from the previous view',async({page})=>{
+ await page.setViewportSize({width:320,height:740});
+ await page.goto(url);
+ await page.getByRole('link',{name:'Field log',exact:true}).click();
+ await page.locator('form[data-form="logs"] select[name=protocol]').selectOption('meshcore');
+ await page.getByLabel('Stop or test name').fill('Synthetic MeshCore fixture');
+ await page.getByLabel('Unique packets or texts received').fill('4');
+ await page.getByLabel('Known transmissions').fill('5');
+ await page.getByText('Enter or review coordinates',{exact:true}).click();
+ await page.getByLabel('Latitude').fill('35.65');
+ await page.getByLabel('Longitude').fill('-78.5');
+ await page.getByRole('button',{name:'Save observation'}).click();
+ await expect(page.locator('summary').filter({hasText:'Synthetic MeshCore fixture'})).toBeVisible();
+ await page.getByRole('link',{name:'Coverage map',exact:true}).click();
+ const marker=page.getByRole('button',{name:/Synthetic MeshCore fixture.*MeshCore/});
+ await expect(marker).toBeVisible();
+ await page.locator('#map-filter select[name=protocol]').selectOption('meshtastic');
+ await page.getByRole('button',{name:'Apply filters'}).click();
+ await expect(marker).toHaveCount(0);
+ await expect(page.locator('#map-host output')).toContainText('No points match');
+ await page.locator('#map-filter select[name=protocol]').selectOption('meshcore');
+ await page.getByRole('button',{name:'Apply filters'}).click();
+ await expect(marker).toBeVisible();
+});

@@ -1,6 +1,6 @@
-const name='mesh-field-lab-shell-v9';
+const name='mesh-field-lab-shell-v10';
 const scope=new URL(self.registration.scope);
-const shell=['./','./index.html','./style.css','./app.js','./db.js','./domain.js','./guide.js','./map.js','./readiness-model.js','./readiness-guide.js','./readiness-ui.js','./kits/SenseCAP-X1-Offline-Kit-STARTER.zip','./kits/SenseCAP-P1-Pro-Offline-Kit-STARTER.zip','./manifest.webmanifest','./icon.svg','./icon-192.png','./icon-512.png'];
+const shell=['./','./index.html','./style.css','./app.js','./db.js','./domain.js','./guide.js','./map.js','./readiness-model.js','./readiness-guide.js','./readiness-ui.js','./kits/SenseCAP-X1-Offline-Kit-STARTER.zip','./kits/SenseCAP-P1-Pro-Offline-Kit-STARTER.zip','./manifest.webmanifest','./icon.svg?v=2','./icon-192.png?v=2','./icon-512.png?v=2','./icon-maskable-512.png','./apple-touch-icon.png'];
 const assets=new Set(shell.map(path=>new URL(path,scope).href));
 self.addEventListener('install',event=>event.waitUntil(caches.open(name).then(cache=>cache.addAll([...assets].map(url=>new Request(url,{cache:'reload'}))))));
 self.addEventListener('activate',event=>event.waitUntil((async()=>{

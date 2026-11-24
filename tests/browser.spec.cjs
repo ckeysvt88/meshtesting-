@@ -70,8 +70,26 @@ for(const width of [390,1440])test('layout, persistence and private offline map 
  const manifest=await (await page.request.get(url+'manifest.webmanifest')).json();
  expect(new URL(manifest.start_url,url).href).toBe(url);
  expect(new URL(manifest.id,new URL(url).origin).href).toBe(url);
+ expect(manifest.icons.some(icon=>icon.purpose==='maskable'&&icon.sizes==='512x512')).toBe(true);
  for(const icon of manifest.icons)expect((await page.request.get(new URL(icon.src,url).href)).ok()).toBe(true);
  await context.setOffline(true);await page.reload();
+ const icons=await page.evaluate(async manifestIcons=>{
+  const touch=document.querySelector('link[rel="apple-touch-icon"]').href;
+  const favicon=document.querySelector('link[rel="icon"]').href;
+  const iconSize=async path=>{
+   const response=await fetch(path);
+   const bitmap=await createImageBitmap(await response.blob());
+   const size=bitmap.width+'x'+bitmap.height;
+   bitmap.close();
+   return size;
+  };
+  return {
+   installed:await Promise.all(manifestIcons.map(icon=>iconSize(icon.src))),
+   touch:await iconSize(touch),
+   favicon:(await fetch(favicon)).ok
+  };
+ },manifest.icons);
+ expect(icons).toEqual({installed:manifest.icons.map(icon=>icon.sizes),touch:'180x180',favicon:true});
  await page.getByRole('link',{name:'Coverage map'}).click();
  await expect(page.getByRole('button',{name:/Test fixture/})).toBeVisible();
  await expect(page.getByRole('button',{name:/Test sender/})).toBeVisible();

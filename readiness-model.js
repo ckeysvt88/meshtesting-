@@ -85,7 +85,7 @@ export function readinessState(records,fileIds,logs,trials,guide,now=Date.now())
  const tasks=guide.flatMap((task,i)=>scopes(i+1).map(scope=>({...task,steps:instructions(task,i+1,scope),n:i+1,scope,record:status(i+1,scope.id)})));
  const complete=(n,id='lab')=>{
   const r=status(n,id);
-  return Boolean(r?.status==='done'&&r.evidence&&tasks.find(t=>t.n===n&&t.scope.id===id)?.steps.every((_,i)=>r.steps.includes(i))&&!expired(r.verified,guide[n-1].interval||365,now));
+  return Boolean(r?.status==='done'&&r.evidence&&tasks.find(t=>t.n===n&&t.scope.id===id)?.steps.every((_,i)=>r.steps?.includes(i))&&!expired(r.verified,guide[n-1].interval||365,now));
  };
  const verified=records.filter(r=>r.kind==='firmware'&&hasFirmware(r,files));
  const firmware=(d,protocol,role)=> {
@@ -99,7 +99,10 @@ export function readinessState(records,fileIds,logs,trials,guide,now=Date.now())
   return /^no erase required$/i.test(r.erase)||verified.some(e=>e.device===d.id&&e.model===d.model&&e.revision===r.revision&&e.protocol==='meshtastic'&&e.role==='Erase image'&&e.filename&&e.filename===r.erase);
  });
  const hasForward=d=>firmware(d,'meshcore',migrationRole(d))&&verified.some(r=>r.device===d.id&&r.model===d.model&&r.revision===byId.get(d.id)?.revision&&r.protocol==='meshcore'&&r.role==='Erase image'&&r.source&&r.provenance);
- const prepared=fleet.filter(d=>complete(4,d.id)&&complete(5,d.id)&&hasRollback(d));
+ const prepared=fleet.filter(d=>{
+  const r=byId.get(d.id);
+  return complete(4,d.id)&&complete(5,d.id)&&hasRollback(d)&&r?.screens&&r.links&&r.exported&&r.identity;
+ });
  const checkValidation=(key,p='meshcore')=>{
   const r=byId.get('validation:'+p+':'+key);
   return r?.outcome==='pass'&&r.evidence&&!expired(r.verified,30,now);
@@ -112,7 +115,7 @@ export function readinessState(records,fileIds,logs,trials,guide,now=Date.now())
  });
  const gates=[
   [[phones.every(d=>complete(1,d.id)),'Install required applications on both iPhones'],[complete(3),'Build and check the offline firmware kits'],[complete(6),'Verify software and offline installers on Windows'],[fleet.every(hasForward),'Attach matching, checksum-matched MeshCore firmware and erase files for every target']],
-  [[prepared.length===fleet.length,'Record full backups and attach the installed-version rollback firmware for each radio'],[fleet.every(d=>{const r=byId.get(d.id);return r?.screens&&r.links&&r.exported&&r.identity;}),'Confirm screenshots, channel backup, CLI export and identity recovery plan for each radio']],
+  [[prepared.length===fleet.length,'Confirm all four backup checks and attach the installed-version rollback firmware for each radio']],
   [[phones.every(d=>complete(2,d.id)),'Test both iPhones without internet'],[fleet.every(d=>complete(7,d.id)),'Verify safe bootloader access separately for each radio'],[complete(8)&&['Windows laptop','External SSD or USB drive','My iPhone','My wife’s iPhone','Printed instructions'].every(name=>records.some(r=>r.kind==='archive'&&r.location===name&&r.evidence&&!expired(r.verified,90,now))),'Open and verify each archive copy without internet']],
   [[complete(9),'Run a controlled offline MeshCore migration'],[complete(10),'Complete validation and restoration'],[['direct','ack','private','discover','admin','relay','offline','battery','restart','range'].every(k=>checkValidation(k))&&['rollback','restore','returned'].every(k=>checkValidation(k,'meshtastic')),'Record passing offline MeshCore and Meshtastic recovery tests']],
   [[hasRoute('meshcore')&&checkValidation('cary'),'Verify a recent, controlled offline MeshCore Clayton–Cary trial in Field Log']]

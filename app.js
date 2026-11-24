@@ -350,6 +350,8 @@ function geolocate(button){
  },()=>{button.disabled=false;if(form.isConnected)status('GPS did not return a fix. Check permissions or enter coordinates manually.');},{enableHighAccuracy:true,timeout:15000});
 }
 $('#view').addEventListener('click',async e=>{
+ const summary=e.target.closest('[data-r-step] > summary');
+ if(summary){try{await readinessUI.rememberStep(summary);}catch(error){status(error.message);}return;}
  const b=e.target.closest('button');if(!b)return;
  const d=b.dataset;
  try{
@@ -408,6 +410,9 @@ $('#view').addEventListener('submit',async e=>{
    $('#rf-output').textContent=km&&mhz?'Path loss '+format(loss(km,mhz),' dB')+' · midpoint radius '+format(fresnel(km,mhz),' m')+' · 60% radius '+format(.6*fresnel(km,mhz),' m'):'Enter both distance and frequency.';
   }
  }catch(error){status(error.message);}finally{if(button)button.disabled=false;}
+});
+$('#view').addEventListener('input',async e=>{
+ if(e.target.form?.dataset.rForm==='task'){try{await readinessUI.input(e.target);}catch(error){status(error.message);}}
 });
 $('#view').addEventListener('change',async e=>{
  if(e.target.dataset.rValidation!==undefined||e.target.dataset.rImport!==undefined||e.target.dataset.rCheck!==undefined||e.target.form?.dataset.rForm){try{await readinessUI.change(e.target);}catch(error){status(error.message);}return;}

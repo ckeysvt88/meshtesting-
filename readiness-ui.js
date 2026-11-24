@@ -308,7 +308,7 @@ export function createReadiness(api){
    return;
   }
   const form=target.form;
-  if(form?.dataset.rForm==='task'&&['notes','evidence','reason'].includes(target.name)){await set(taskForm(form,get(form.dataset.id)));return;}
+
   if(form?.dataset.rForm==='firmware'&&['device','model','protocol'].includes(target.name)){
    const controls=form.elements;
    if(target.name==='device'){
@@ -318,5 +318,13 @@ export function createReadiness(api){
    controls.role.innerHTML=options(firmwareRoles(controls.model.value,controls.protocol.value).map(x=>[x,x]));
   }
  }
- return {view,home,click,submit,change};
+ async function input(target){
+  const form=target.form;
+  if(form?.dataset.rForm==='task'&&['notes','evidence','reason'].includes(target.name))await set(taskForm(form,get(form.dataset.id)));
+ }
+ async function rememberStep(summary){
+  const details=summary.parentElement;
+  if(!details.open)await setCursor({step:Number(details.dataset.rStep)});
+ }
+ return {view,home,click,submit,change,input,rememberStep};
 }

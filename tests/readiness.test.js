@@ -26,6 +26,7 @@ test('readiness maturity depends on required records, local bytes, separate devi
  assert.equal(compute(completeRecords,[]).level,0);
  assert.equal(compute(completeRecords,files.filter(x=>x!=='cs01-erase')).level,0);
  assert.equal(compute(completeRecords.filter(r=>r.id!=='dk88-back')).level,1);
+ assert.equal(compute(completeRecords.map(r=>r.id==='dk88'?{...r,identity:false}:r)).level,1);
  assert.equal(compute(completeRecords.map(r=>r.id===taskKey(7,'cs01')?{...r,status:'na'}:r)).level,2);
  assert.equal(compute(completeRecords.map(r=>r.id===taskKey(7,'cs01')?{...r,verified:'2025-05-01'}:r)).level,2);
  assert.equal(compute(completeRecords.filter(r=>r.id!=='validation:meshtastic:restore')).level,3);

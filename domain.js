@@ -1,3 +1,4 @@
+import {sanitizeReadiness} from './readiness-model.js';
 export const types=['range','public','message','relay'];
 export const text=(value,max=500)=>String(value??'').trim().slice(0,max);
 const number=(v,min,max)=>v===''||v==null?null:Number.isFinite(Number(v))&&Number(v)>=min&&Number(v)<=max?Number(v):NaN;
@@ -9,7 +10,7 @@ export function clean(kind,r){
   out.lat=number(r.lat,-90,90);out.lon=number(r.lon,-180,180);
   if(Number.isNaN(out.lat)||Number.isNaN(out.lon)||(out.lat===null)!==(out.lon===null))throw Error('Enter a valid latitude and longitude together.');
  }
- if(kind==='profiles'){for(const key of ['device','firmware','antenna','height','role','region','preset','slot','frequency','channel','mqtt','proxy','bridge','position','range'])out[key]=text(r[key],180);}
+ if(kind==='profiles'){out.protocol=['meshtastic','meshcore'].includes(r.protocol)?r.protocol:'meshtastic';for(const key of ['device','firmware','antenna','height','role','region','preset','slot','frequency','channel','mqtt','proxy','bridge','position','range'])out[key]=text(r[key],180);}
  if(kind==='sites'){out.type=['anchor','destination','relay'].includes(r.type)?r.type:'relay';for(const key of ['access','power','mount','obstruction','height','gain','cable','margin','model','extension'])out[key]=text(r[key],200);}
  if(kind==='sites'&&typeof r.image==='string'&&/^data:image\/(png|jpeg|webp);base64,[a-z0-9+/=]+$/i.test(r.image)&&r.image.length<=3000000)out.image=r.image;
  if(kind==='logs'){
@@ -19,12 +20,18 @@ export function clean(kind,r){
   if(out.time)out.time=new Date(out.time).toISOString();
   for(const key of ['vehicle','height','orientation','weather','sender','recipient','node','trace','route','ack','human','reply'])out[key]=text(r[key],200);
   if(typeof r.image==='string'&&/^data:image\/(png|jpeg|webp);base64,[a-z0-9+/=]+$/i.test(r.image)&&r.image.length<=3000000)out.image=r.image;
+  out.protocol=['meshtastic','meshcore','unknown'].includes(r.protocol)?r.protocol:'meshtastic';
+  out.origin=['manual','imported','position','modeled'].includes(r.origin)?r.origin:'manual';
+  out.internet=['offline','assisted','online'].includes(r.internet)?r.internet:'unknown';
+  out.mqtt=out.protocol==='meshcore'?'na':['on','off'].includes(r.mqtt)?r.mqtt:'unknown';
+  for(const key of ['firmware','radio','antenna','environment','repeaters','routeDetails','dataSource'])out[key]=text(r[key],200);
   out.direction=r.direction==='reverse'?'reverse':'forward';out.path=['direct','relayed'].includes(r.path)?r.path:'unknown';
-  out.rf=r.rf===true||r.rf==='true'||r.rf==='on';out.control=r.control===true||r.control==='true'||r.control==='on';
-  for(const [key,min,max] of [['sent',1,100000],['received',0,100000],['rssi',-200,0],['snr',-60,60],['hops',0,15],['battery',0,100],['delay',0,86400]]){
-   out[key]=number(r[key],min,max);
-   if(Number.isNaN(out[key])||(['sent','received','hops'].includes(key)&&out[key]!==null&&!Number.isInteger(out[key])))throw Error('Invalid '+key+'.');
+  out.rf=(r.rf===true||r.rf==='true'||r.rf==='on')&&out.internet!=='assisted'&&out.origin!=='modeled'&&out.origin!=='position'&&out.mqtt!=='on';out.control=r.control===true||r.control==='true'||r.control==='on';
+  for(const [key,min,max] of [['mhz',100,10000],['gain',-50,100],['vswr',1,100],['testDistance',0,5000],['acks',0,100000],['sent',1,100000],['received',0,100000],['rssi',-200,0],['snr',-60,60],['hops',0,15],['battery',0,100],['delay',0,86400]]){
+   out[key]=key==='hops'&&out.protocol!=='meshtastic'?null:number(r[key],min,max);
+   if(Number.isNaN(out[key])||(['sent','received','hops','acks'].includes(key)&&out[key]!==null&&!Number.isInteger(out[key])))throw Error('Invalid '+key+'.');
   }
+  if(out.acks!==null&&out.sent!==null&&out.acks>out.sent)throw Error('Acknowledgements cannot exceed transmissions.');
   if(out.sent!==null&&(out.received===null||out.received>out.sent))throw Error('Received must be between zero and sent.');
  }
  return out;
@@ -46,7 +53,7 @@ export function stats(logs){
 export function trials(logs){
  const groups=new Map();
  for(const r of logs.filter(x=>x.rf&&x.session&&x.site&&x.anchor&&x.pair&&(x.type==='message'||x.type==='relay'))){
-  const key=JSON.stringify([r.type,r.anchor,r.site,r.session,r.pair]);
+  const key=JSON.stringify([r.protocol||'meshtastic',r.type,r.anchor,r.site,r.session,r.pair]);
   if(!groups.has(key))groups.set(key,[]);
   groups.get(key).push(r);
  }
@@ -55,7 +62,7 @@ export function trials(logs){
   return group.length>0&&group.every(r=>r.human==='yes'&&r.sent!==null&&r.received===r.sent);
  })}));
 }
-export const columns='id,name,type,session,pair,anchor,site,time,lat,lon,direction,path,rf,control,sent,received,rssi,snr,hops,battery,delay,vehicle,height,orientation,weather,sender,recipient,node,trace,route,ack,human,reply,notes'.split(',');
+export const columns='id,name,type,session,pair,anchor,site,time,lat,lon,direction,path,rf,control,sent,received,rssi,snr,hops,battery,delay,vehicle,height,orientation,weather,sender,recipient,node,trace,route,ack,human,reply,notes,protocol,origin,internet,mqtt,firmware,radio,antenna,environment,mhz,gain,vswr,testDistance,acks,repeaters,routeDetails,dataSource'.split(',');
 export function csv(rows){
  const quote=v=>{let s=String(v??'');if(typeof v==='string'&&/^[\s]*[=+@-]|^[\t\r\n]/.test(s))s="'"+s;return '"'+s.replaceAll('"','""')+'"'};
  return [columns.join(','),...rows.map(r=>columns.map(k=>quote(r[k])).join(','))].join('\r\n');
@@ -91,7 +98,8 @@ export function parseCSV(source,mode='auto',mapping={}){
  const own=mode==='lab'||mode==='auto'&&heads.includes('sent')&&heads.includes('received')&&heads.includes('session');
  return rows.map((r,index)=>{
   if(own){
-   for(const k of columns.filter(k=>!['sent','received','rssi','snr','hops','battery','delay','lat','lon'].includes(k)))if(/^'[\s]*[=+@-]|^'[\t\r\n]/.test(r[k]||''))r[k]=r[k].slice(1);
+   for(const key of ['testDistance','routeDetails','dataSource'])r[key]=r[key.toLowerCase()];
+   for(const k of columns.filter(k=>!['sent','received','rssi','snr','hops','battery','delay','lat','lon','mhz','gain','vswr','testDistance','acks'].includes(k)))if(/^'[\s]*[=+@-]|^'[\t\r\n]/.test(r[k]||''))r[k]=r[k].slice(1);
    return clean('logs',r);
   }
   const get=(k,...aliases)=>mapping[k]?r[mapping[k]]:aliases.map(h=>r[h]).find(Boolean);
@@ -101,17 +109,19 @@ export function parseCSV(source,mode='auto',mapping={}){
   if(position&&(!lat||!lon))throw Error('Position Log requires mapped latitude and longitude.');
   const timestamp=get('time','timestamp','time','date')?.trim();
   return clean('logs',{name:get('name','sendername','sender','from','name')||(position?'Imported position ':'Imported packet ')+(index+1),type:'range',session:position?'Position Log import':'Packet CSV import',
-   time:timestamp&&/(Z|[+-]\d\d:\d\d)$/i.test(timestamp)&&Number.isFinite(Date.parse(timestamp))?timestamp:undefined,
+   protocol:['meshtastic','meshcore'].includes(mapping.protocol)?mapping.protocol:'unknown',origin:position?'position':'imported',dataSource:position?'iOS Position Log':'Packet CSV',time:timestamp&&/(Z|[+-]\d\d:\d\d)$/i.test(timestamp)&&Number.isFinite(Date.parse(timestamp))?timestamp:undefined,
    lat,lon,received:position?null:1,rssi:position?null:get('rssi','rxrssi','rssi'),snr:position?null:get('snr','rxsnr','snr'),notes:[get('notes','payload','message','notes'),timestamp?'Source time: '+timestamp:'Source time unavailable'].filter(Boolean).join(' · ')});
  });
 }
-export const kinds=['profiles','sites','logs','checks','overlays','drafts'];
+export const kinds=['profiles','sites','logs','checks','overlays','drafts','readiness'];
 export function backup(data){
- if(data?.schema!==1)throw Error('Unsupported backup version.');
- const result={schema:1};
+ if(![1,2].includes(data?.schema))throw Error('Unsupported backup version.');
+ const result={schema:2};
  for(const k of kinds){
+  if(k==='readiness'&&data.schema===1&&!data[k]){result[k]=[];continue;}
   if(!Array.isArray(data[k]))throw Error('Missing '+k+' in backup.');
   result[k]=data[k].map(r=>{
+   if(k==='readiness')return sanitizeReadiness(r,true);
    if(k==='checks')return {id:text(r?.id,80),done:r?.done===true};
    if(k==='drafts')return {id:text(r?.id,80),value:text(r?.value,100)};
    if(k==='overlays'){

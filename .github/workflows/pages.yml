@@ -22,7 +22,8 @@ jobs:
       - if: github.ref == 'refs/heads/main'
         run: |
           mkdir _site
-          cp index.html style.css app.js db.js domain.js guide.js map.js sw.js manifest.webmanifest icon.svg icon-192.png icon-512.png _site/
+          cp index.html style.css app.js db.js domain.js guide.js map.js readiness-model.js readiness-guide.js readiness-ui.js sw.js manifest.webmanifest icon.svg icon-192.png icon-512.png _site/
+          cp -r kits _site/
       - if: github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v3
         with:

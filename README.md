@@ -36,3 +36,63 @@ The branch `rollback/pre-mesh-field-lab` preserves the original README-only comm
 - [CS01 platform documentation](https://meshtastic.org/docs/hardware/devices/seeed-studio/sensecap/solar-node/)
 - [Traceroute](https://meshtastic.org/docs/configuration/module/traceroute/)
 - [Three-perspective review](AUDIT.md)
+
+## Emergency communications workspace
+
+Open **Readiness** from the workspace navigation, or select **Start preparation**
+from Home. Start with your iPhone, then repeat the steps on your wife's iPhone.
+Preparation opens one instruction at a time. Each radio has a separate backup,
+rollback and non-destructive bootloader assignment. Use Device Backups to
+record the actual installed version and hardware revision before attaching files.
+
+- **Firmware Vault** stores metadata and, when attached, a browser-local copy up
+  to 32 MiB per file. SHA-256 uses Web Crypto. A matching reference digest is
+  distinct from an operator's hardware pass. A locally baselined digest checks
+  later integrity. Keep the originals on the preparedness SSD.
+- **Offline Archive** tracks laptop, external drive, both phones, and print
+  copies. Download the audited starter ZIPs from Preparation task 3. They contain
+  scripts and manifests. Exact rollback files depend on the installed radios.
+- **Migration** unlocks controlled flashing steps after Offline Ready and an
+  explicit bench preflight. Print the quick reference and beginner walkthrough
+  for the external archive. Use the native applications and Windows tools for
+  any radio operation.
+- **Field Log** records either protocol, its observation provenance, antenna
+  configuration, internet and MQTT status, and distinct route evidence.
+  Coverage Map filters local points by protocol and measurement class. RF
+  Analytics compares observations recorded under a shared session, stop and
+  path class. Captured and theoretical evidence have distinct handling.
+- **Data & help** backs up and restores version-2 JSON project data, and can
+  still import version-1 backups. Firmware attachments are deliberately stored
+  separately and must be reattached after a restore. Field locations, screenshots
+  and notes can be personal. Keep their exports under your control. Record only
+  non-secret metadata in the PWA. Save YAML, channel QR codes, key material and
+  credentials to separate protected storage.
+
+Readiness maturity is gated sequentially. Independent app, package, recovery,
+offline and validation evidence must be current. A skipped, blocked, expired,
+or mismatched prerequisite cannot unlock a higher level. Preparation and
+operational route evidence are displayed separately. There is no automatic
+radio data collection. Treat the local coordinate map as a plot of observations
+and imported reference geometry.
+
+### Install and verify on iPhone
+
+1. Open the [live application](https://ckeysvt88.github.io/meshtesting-/) in Safari.
+2. Tap Share → Add to Home Screen and launch the installed app while online.
+3. Open Data & help and confirm the offline cache is active. On an existing
+   installation, close old app tabs and relaunch to activate the new worker.
+4. Turn on Airplane Mode, turn Wi-Fi off, then reopen the PWA. Check that the
+   preparation instructions, local records, checked firmware attachments,
+   map points and export controls are available.
+5. Keep a JSON export, downloaded files and paper copy outside browser storage.
+   Clearing browser data or iOS eviction can remove cached artifacts.
+
+### Deployment and recovery
+
+GitHub Actions runs the Node and Chromium suites, publishes GitHub Pages on
+`main`, then verifies the live HTTPS origin and Chrome PWA installation.
+The pre-expansion snapshot is branch `rollback/pre-emergency-readiness` at
+`45dd9405f2f89ae6e31eafa3131309185b384b2d`. IndexedDB adds stores in version 2.
+If deploying older app code for a rollback, update that code to open the
+existing database version without downgrading it, or use a separate browser
+profile for the old app. Save an external project export before any recovery.

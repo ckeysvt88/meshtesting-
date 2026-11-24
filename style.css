@@ -53,7 +53,7 @@ form details .grid{margin-top:9px}
  html{scroll-padding-top:9rem}
  #connection{margin:5px 0 6px}
  nav{display:block;overflow:visible}
- .main-nav{display:grid;grid-template-columns:repeat(4,auto);gap:2px}
+ .main-nav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px}
  .main-nav a{padding:9px 5px;white-space:normal;text-align:center;font-size:.87rem}
  .more-nav{padding:0;margin:2px 0 0}
  .more-nav summary{padding:6px 2px;font-size:.85rem}
@@ -68,3 +68,39 @@ form details .grid{margin-top:9px}
 .brand-mark{display:grid;place-items:center;width:36px;height:36px;border-radius:10px;background:#263f71;color:white;flex:none;font-weight:760}
 
 .guide-instructions{padding-left:1.55rem;margin:12px 0 20px;max-width:65ch}.guide-instructions li{padding-left:.25rem;margin-bottom:.8rem}.guide-instructions li::marker{font-weight:750;color:#263f71}
+
+/* Emergency readiness workspace */
+.readiness-nav{display:flex;flex-wrap:wrap;gap:.45rem;margin:0 0 1.1rem}
+.readiness-nav button{font-size:.87rem;padding:.45rem .7rem;min-height:40px}
+.readiness-nav button[aria-current]{background:#e7effb;color:#174376;border-color:#94b7de;font-weight:700}
+.readiness-list{padding-left:0;list-style:none}
+.readiness-list li{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin:.5rem 0}
+.readiness-list button{text-align:left}
+.task-state,.protocol{display:inline-block;border-radius:.35rem;padding:.2rem .48rem;font-size:.83rem;font-weight:700;background:#eaf0f6;color:#264358}
+.task-state.done{background:#e5f3eb;color:#205437}
+.task-state.blocked{background:#f8e9dc;color:#753528}
+.protocol.meshcore{background:#eee7fa;color:#573587}
+.protocol.meshtastic{background:#e2f1eb;color:#155443}
+.read-warning{padding:.75rem .9rem;background:#fff3df;border-left:4px solid #a96217;border-radius:.3rem;color:#542c0f}
+.read-task details{padding:.65rem 0;border-bottom:1px solid #dfe6ed}
+.read-task [data-r-step][open]{padding:.65rem .6rem;background:#f0f6fb;border-radius:.4rem}
+.read-task form{margin-top:.8rem}
+.long-code{overflow-wrap:anywhere}
+.connector-example{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.65rem;margin:1rem 0}
+.connector-example div{text-align:center;padding:.6rem;background:#f1f5f8;border-radius:.6rem}
+.connector-example span,.connector-example small{display:block}
+.connector-example span{font-size:1.8rem}
+.connector-example figcaption{grid-column:1/-1}
+#emergency-print{display:none}
+[data-r-form]{scroll-margin-top:9rem}
+@media (max-width:520px){
+ .main-nav a{padding-left:.18rem;padding-right:.18rem;font-size:.74rem}
+ .readiness-nav button{flex:1 0 auto}
+ .readiness-list li{align-items:flex-start}
+}
+@media print{
+ body:has(#emergency-print)>:not(#emergency-print){display:none!important}
+ #emergency-print{display:block;color:#000;background:#fff;font:11pt/1.35 system-ui,sans-serif}
+ #emergency-print li{margin-bottom:.4em}
+ #emergency-print h2{break-after:avoid}
+}

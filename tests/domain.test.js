@@ -34,9 +34,9 @@ test('CSV escapes cells, preserves a logged miss and keeps imported data unverif
 });
 test('backup validates and restores',()=>{
  const blank={schema:1,...Object.fromEntries(kinds.map(k=>[k,[]]))};
- assert.deepEqual(backup(blank),blank);
+ assert.deepEqual(backup(blank),{...blank,schema:2});
  assert.throws(()=>backup({...blank,logs:[{name:'a',id:'x'},{name:'b',id:'x'}]}),/duplicate/);
- assert.throws(()=>backup({...blank,schema:2}),/version/);
+ assert.throws(()=>backup({...blank,schema:99}),/version/);
 });
 test('real firmware split-RSSI and Apple position schemas',()=>{
  const header='time,from,sender name,sender lat,sender long,rx lat,rx long,rx elevation,rx snr,distance,hop limit,payload,rx rssi';

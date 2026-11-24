@@ -9,9 +9,11 @@ export const levels = ['Unprepared','Software Ready','Recovery Ready','Offline R
 export const phases = ['Prepare both iPhones','Collect firmware and software','Protect the existing network','Verify software and hardware','Build the permanent archive','Rehearse and validate'];
 export const taskScopes = [phones,phones,null,fleet,fleet,null,fleet,null,null,null];
 export const targetRoles = {
- 'SenseCAP MeshTracker X1':['Bluetooth Companion','USB Companion'],
- 'SenseCAP Solar Node P1-Pro':['Repeater'],
- 'Wio Tracker L1 Pro':['Bluetooth Companion'],
+ 'SenseCAP MeshTracker X1':['Bluetooth Companion','USB Companion','Repeater','Room Server','Erase image','Bootloader'],
+ 'SenseCAP Solar Node P1-Pro':['Bluetooth Companion','USB Companion','Repeater','Room Server','Erase image','Bootloader'],
+ 'Wio Tracker L1 Pro':['Bluetooth Companion','Erase image'],
+ 'Elecrow ThinkNode M1':['Bluetooth Companion','USB Companion','Repeater','Room Server'],
+ 'Heltec V4':['Bluetooth Companion','USB Companion','Repeater','Room Server'],
  'LILYGO T-Deck Plus':['Standalone client']
 };
 export const hashPattern = /^[a-f0-9]{64}$/i;
@@ -30,7 +32,7 @@ export async function digest(file) {
  const bytes=await crypto.subtle.digest('SHA-256',await file.arrayBuffer());
  return Array.from(new Uint8Array(bytes),v=>v.toString(16).padStart(2,'0')).join('');
 }
-export const firmwareRoles = (model, protocol) => protocol==='meshtastic'?['Application firmware','Erase image']:protocol==='meshcore'?[...(targetRoles[model]||[]),'Erase image','Bootloader']:[];
+export const firmwareRoles = (model, protocol) => protocol==='meshtastic'?['Application firmware','Erase image']:protocol==='meshcore'?targetRoles[model]||[]:[];
 export function sanitizeReadiness(raw, restoring=false){
  if(!raw||typeof raw!=='object')throw Error('Invalid readiness record.');
  const id=words(raw.id,80), kind=raw.kind;

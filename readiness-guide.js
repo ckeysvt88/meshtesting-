@@ -1,4 +1,6 @@
 export const sources = {
+ meshcoreIOS:['MeshCore on the US App Store','https://apps.apple.com/us/app/meshcore/id6742354151'],
+ meshtasticIOS:['Meshtastic on the US App Store','https://apps.apple.com/us/app/meshtastic/id1586432531'],
  meshcoreDocs:['Official MeshCore documentation and standalone hardware','https://meshcore.io/docs'],
  meshcore:['MeshCore apps and documentation','https://meshcore.io/'],
  flasher:['MeshCore firmware flasher','https://flasher.meshcore.io/'],
@@ -17,7 +19,7 @@ export const sources = {
  files:['Apple Files storage guide','https://support.apple.com/en-us/102570'],
  python:['Python Windows installers','https://www.python.org/downloads/windows/'],
  putty:['PuTTY downloads','https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html'],
- nrf:['Nordic nRF Device Firmware Update','https://github.com/NordicSemiconductor/IOS-nRF-Connect-Device-Manager'],
+ nrf:['Nordic nRF Device Firmware Update','https://apps.apple.com/us/app/nrf-device-firmware-update/id1624454660'],
  nrf52:['Adafruit nRF52 recovery utility','https://github.com/adafruit/Adafruit_nRF52_nrfutil'],
  wioAntenna:['Seeed LoRa antenna selection guide','https://wiki.seeedstudio.com/lora_antenna_selection_guide/'],
  wioProduct:['Seeed Wio Tracker L1 Pro specifications and packing list','https://www.seeedstudio.com/Wio-Tracker-L1-Pro-p-6454.html'],
@@ -30,11 +32,11 @@ export const reviewed='November 24, 2026';
 const task=(phase,title,purpose,kit,time,needs,warning,steps,expected,trouble,refs,interval)=>({phase,title,purpose,kit,time,needs,warning,steps,expected,trouble,refs,interval});
 export const guide = [
  task(0,'Install the phone apps','Keep both native apps ready to connect to the correct radio after an outage.','This iPhone, Apple account, working internet and its assigned X1','10 min per phone','Identify CK88 for your phone or DK88 for your wife’s phone.','A MeshCore app cannot talk to an X1 running Meshtastic. Keep the current network in Meshtastic during preparation.',[
- 'Open the MeshCore downloads page in Safari, tap the iOS App Store link and tap Get. Wait until the button says Open, then tap it.',
- 'Open the Meshtastic Apple guide in Safari, follow its App Store link, tap Get and launch the app. Allow Bluetooth when asked.',
+ 'Open the MeshCore App Store link listed below and tap Get. Wait until the button says Open, then tap it.',
+ 'Open the Meshtastic App Store link listed below, tap Get and launch the app. Allow Bluetooth when asked.',
  'Open Settings → Privacy & Security → Bluetooth. Turn on access for both apps. Return to Meshtastic, open its connection screen, choose your assigned X1 and verify the name in Settings.',
  'Choose USB UF2 as your primary recovery method. For optional phone DFU, follow the exact board’s vendor instructions for the required app and format. Install the specified Nordic app while online if that procedure calls for it. Record the compatibility decision.'
- ],'Both required apps open and Meshtastic shows the assigned, unchanged X1. Record the phone and app versions without pairing codes.','If the Bluetooth prompt was declined, enable it in Settings. If the X1 is missing, make sure the other phone or desktop application has disconnected.', ['meshcore','mt','nrf','x1'],90),
+ ],'Both required apps open and Meshtastic shows the assigned, unchanged X1. Record the phone and app versions without pairing codes.','If the Bluetooth prompt was declined, enable it in Settings. If the X1 is missing, make sure the other phone or desktop application has disconnected.', ['meshcoreIOS','meshtasticIOS','meshcore','mt','nrf','x1'],90),
  task(0,'Make the phone useful offline','Verify local access on each iPhone before relying on it.','This iPhone, assigned X1, a locally saved test file','15 min per phone','Install the required apps first.','Airplane mode may remember the last Wi-Fi and Bluetooth settings. Check all three controls explicitly.',[
  'Open Settings → Apps → App Store (or Settings → App Store on older iOS). Turn off Offload Unused Apps. Open Settings → General → iPhone Storage, tap each mesh app and reinstall it if Reinstall App is offered.',
  'In Files, tap Browse → On My iPhone. Tap the menu → New Folder and name it Emergency Communications. Move the downloaded instructions into this folder. Open the file from there.',
@@ -90,7 +92,7 @@ export const guide = [
  'Choose a spare or schedule a deliberate outage with working fallback. Confirm each exact role with the official flasher: X1 CK88 and DK88 are Bluetooth Companions, and CS01 Solar is a Repeater. Confirm the intended firmware file, erase instruction and rollback file for that exact hardware revision.',
  'Perform the separate preflight in Migration. Open the offline instructions and switch the computer and phones offline. Disconnect the Meshtastic app, connect just the chosen radio with a USB data cable, and identify its documented bootloader volume.',
  'When the device-specific guide requires a protocol-change erase, drag only the matching verified erase UF2 onto the identified bootloader drive. Wait for Windows copy completion and the drive to disappear. Re-enter bootloader mode, copy only the matching application UF2 and wait for normal restart. Do not unplug during writes.',
- 'For an X1, open MeshCore on its assigned phone and select the matching companion. Confirm pairing against the device guide, set the node name, then open Radio Settings and confirm the selected USA/Canada preset before purposeful messaging. Save and reboot when prompted.',
+ 'For an X1, open MeshCore on the assigned phone, tap Connect and select the device with the matching MAC. Seeed documents 123456 as the default pairing PIN on this build. If an older pairing blocks connection, use iPhone Settings → Bluetooth → device info → Forget This Device, then pair from MeshCore. Set the node name and use the app’s radio preset screen to select and verify USA/Canada. Save and reboot when prompted.',
  'For CS01 at a safe bench, use serial at 115200 8N1 with no flow control. Send ver and confirm Repeater. Compare the selected release’s repeater CLI guide before changing configuration. Read back name, radio settings and repeat status. Set privileged credentials privately and prove admin status from the companion.',
  'Start with direct companion messaging. For a planned full migration, verify both X1s before converting CS01. Run validation, save evidence and restore the trial device before advancing. If flashing fails, stop after checking exact target, stable cable, port and published file hashes. Use board-specific recovery documentation.'
  ],'The chosen device runs the expected role, works offline and has a documented recovery path. Record whether you used a spare or a planned network outage.','If the expected drive never appears or the unit never restarts, return to its manufacturer recovery page saved offline. Do not substitute bootloaders or retry an erase with unknown firmware.', ['x1','solar','commands','releases','flasher','fcc'],30),
@@ -119,11 +121,11 @@ export const equipmentCategories=['Owned equipment','Planned purchases','Candida
 export const candidates=[
  ['Wio Tracker L1 Pro','https://wiki.seeedstudio.com/get_started_with_other_mesh_firmware/','First device to evaluate for MeshCore BLE companion use. Confirm the antenna feed and hardware revision before ordering a replacement.'],
  ['RAK WisMesh Pocket V2','https://store.rakwireless.com/products/wismesh-pocket','Confirm the exact V2 hardware target and role in the MeshCore flasher before ordering.'],
- ['Elecrow ThinkNode M1','https://www.elecrow.com/','Confirm regional SKU and exact hardware target in the firmware picker.'],
+ ['Elecrow ThinkNode M1','https://www.elecrow.com/download/product/CIL12901M/ThinkNode-M1_User_Manual.pdf','Confirm regional SKU and exact hardware target in the firmware picker.'],
  ['LILYGO T-Deck Plus','https://lilygo.cc/products/t-deck-plus-1','Evaluate standalone client firmware versus companion firmware. Verify keyboard, GPS and role on the exact build.'],
- ['LILYGO T-Beam','https://github.com/Xinyuan-LilyGO/LilyGo-LoRa-Series','Verify board revision, radio chip, power management hardware and named firmware target.'],
+ ['LILYGO T-Beam','https://wiki.lilygo.cc/products/t-beam-series/t-beam/','Verify board revision, radio chip, power management hardware and named firmware target.'],
  ['Heltec V4','https://heltec.org/project/wifi-lora-32-v4/','Verify WiFi LoRa 32 V4 target and regional SKU. Obtain the board-specific recovery instructions.'],
- ['SenseCAP MeshTracker X1','https://wiki.seeedstudio.com/sensecap_meshtracker_x1_meshcore/','Familiar hardware and documented MeshCore Bluetooth/USB companion targets.']
+ ['SenseCAP MeshTracker X1','https://wiki.seeedstudio.com/meshtracker_x1_intro/','Familiar hardware and documented MeshCore Bluetooth/USB companion targets.']
 ];
 export const antennaSteps=[
  'Seeed lists an I-PEX board socket and a 3 dBi stock antenna for the L1 Pro family. Its retail packing list includes a 60 mm IPEX1-to-RP-SMA lead and a 50 mm IPEX1-to-SMA lead. Ask the seller which lead is fitted and included in your specific MeshCore edition. The separately sold 120 mm I-PEX-to-SMA lead, SKU 321990397, is documented with the 195 mm, 2.6 dBi, 902–928 MHz standard SMA male rod, SKU 318020389. Stock and replacement VSWR and comparative range need measurement.',
